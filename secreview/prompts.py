@@ -66,7 +66,7 @@ code in the SAME language and framework, using the project's own libraries/ident
 possible. It must be correct and must not introduce new vulnerabilities (no placeholder secrets, \
 no disabled checks). Prefer framework-native safe APIs (parameterized queries, auth helpers, \
 column allowlists, rendering text instead of HTML). For SQL policy issues give the corrected SQL. \
-Leave `secure_code` empty only if no code-level fix applies.
+Leave `secure_code` empty only if no code-level fix applies; never return a comment-only placeholder such as "// add auth here" - write the actual code. A dismissal reason must be grounded in code you can see; "may be mitigated elsewhere" is not a valid reason to dismiss.
 """
 
 ANALYSIS_INSTRUCTIONS = """\
@@ -110,7 +110,7 @@ UNACCOUNTED_INSTRUCTIONS = """
 <unaddressed_static_signals>
 {signals}
 </unaddressed_static_signals>
-The first pass neither used nor dismissed the static signals above. Examine each one in the code now. If it reveals a real weakness that no draft finding already covers, add it to `additional_findings` (list the signal id in `signal_ids`). If it is covered by an existing draft finding, or is a false positive, add it to `dismissed_signals` with the reason. Every listed signal must end up in one of the two.
+The first pass did not use the static signals above (it either skipped them or dismissed them; any earlier dismissal reason is shown in the hint and may be wrong). Examine each one in the code now. If it reveals a real weakness that no draft finding already covers, add it to `additional_findings` (list the signal id in `signal_ids`). If it is covered by an existing draft finding, or is a false positive, add it to `dismissed_signals` with the reason. Every listed signal must end up in one of the two.
 """
 
 _LOCATION = {

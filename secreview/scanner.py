@@ -68,6 +68,15 @@ def scan(target: str, *, use_ai: bool = True, model: str | None = None, effort: 
         dismissed_ids = {d.get("signal_id") for d in dismissed}
         unaccounted = [s for s in signals if s.id not in used_ids and s.id not in dismissed_ids
                        and SEVERITY_RANK[s.severity] <= SEVERITY_RANK["medium"]]
+        # High-severity leads the first pass dismissed get a second opinion too.
+        reasons = {d.get("signal_id"): d.get("reason", "") for d in dismissed}
+        recheck = [s for s in signals if s.id in dismissed_ids and s.id not in used_ids
+                   and SEVERITY_RANK[s.severity] <= SEVERITY_RANK["high"]]
+        for s in recheck:
+            s.hint += f" [First pass dismissed this as: {reasons.get(s.id, '')}. Re-verify against the code.]"
+        if recheck:
+            dismissed = [d for d in dismissed if d.get("signal_id") not in {s.id for s in recheck}]
+            unaccounted += recheck
         if unaccounted:
             say(f"{len(unaccounted)} static lead(s) not addressed by the first pass; sending to review")
         review = ai.review(name, files, signals, drafts, meta["batch_files"], unaccounted)
