@@ -7,15 +7,15 @@
 | **Application** | vulnerable-app (samartha-2601/CDF-CyberSec-Hackathon/vulnerable-app) |
 | **Source** | `https://github.com/samartha-2601/CDF-CyberSec-Hackathon/tree/main/vulnerable-app` |
 | **Assessment type** | AI-assisted static code review |
-| **Assessment date** | 2026-11-05 00:08 UTC |
+| **Assessment date** | 2026-11-05 21:48 UTC |
 | **Tool** | SecReview AI v1.0.0 |
-| **AI model** | gemini-3.5-flash-lite |
+| **AI model** | gemini-3.6-flash |
 | **Files / lines reviewed** | 18 files, 951 lines |
 | **Overall risk rating** | **CRITICAL** |
 
 ## 2. Executive Summary
 
-An independent security review of the CDF TaskFlow codebase revealed multiple severe vulnerabilities across serverless edge functions, frontend components, and database access policies. The most critical finding is a SQL injection vulnerability in the task search function, allowing unauthenticated or low-privileged attackers to execute arbitrary database queries. Additional high-severity flaws include unauthenticated API endpoints using privileged service-role credentials, stored cross-site scripting in task comments, and mass assignment risks. Immediate remediation is required to implement parameterization, strict authentication checks, input sanitization, and proper row-level security controls before any production deployment.
+A static security review of the CDF TaskFlow codebase identified severe security vulnerabilities across Supabase Edge Functions, database Access Control Policies (RLS), and React frontend rendering. The overall security risk is CRITICAL. The primary concerns include unauthenticated database mutation and raw SQL injection in Edge Functions, allowing attackers to manipulate or exfiltrate database records without authentication. Additionally, missing authorization checks in Row-Level Security policies allow authenticated users to view all project tasks and escalate their privileges to administrator. Immediate remediation must focus on securing Edge Function endpoints with proper authentication, parameterizing SQL queries, and scoping database UPDATE permissions.
 
 > AI-assisted findings were grounded against the source code and reviewed in a second, independent AI pass. Items marked *Needs validation* depend on runtime context and should be confirmed before being treated as exploitable.
 
@@ -23,23 +23,24 @@ An independent security review of the CDF TaskFlow codebase revealed multiple se
 
 | Severity | Count |
 |---|---:|
-| Critical | 1 |
+| Critical | 2 |
 | High | 3 |
 | Medium | 1 |
 | Low | 1 |
 | Info | 0 |
-| **Total** | **6** |
+| **Total** | **7** |
 
 | ID | Severity | Title | Location | Status |
 |---|---|---|---|---|
 | [SR-001](#sr-001) | Critical | SQL Injection in Task Search Edge Function | `supabase/functions/search-tasks/index.ts:20` | Confirmed |
-| [SR-002](#sr-002) | High | Stored Cross-Site Scripting via dangerouslySetInnerHTML | `src/components/TaskComments.tsx:39` | Confirmed |
-| [SR-003](#sr-003) | High | Unauthenticated Privileged API Endpoint for Profile Retrieval | `supabase/functions/get-profile/index.ts:4` | Confirmed |
-| [SR-004](#sr-004) | High | Mass Assignment Vulnerability in Update Task Edge Function | `supabase/functions/update-task/index.ts:36` | Confirmed |
-| [SR-005](#sr-005) | Medium | Permissive Row-Level Security Policies on Tables | `supabase/migrations/002_access_policies.sql:9` | Confirmed |
-| [SR-006](#sr-006) | Low | Hardcoded Placeholder Secret in Frontend Code | `src/lib/demoConfig.ts:7` | Confirmed |
+| [SR-002](#sr-002) | Critical | Unauthenticated Task Update with Mass Assignment and Privilege Bypass | `supabase/functions/update-task/index.ts:26` | Confirmed |
+| [SR-003](#sr-003) | High | Cross-Site Scripting (XSS) via Unsanitized Comment Rendering | `src/components/TaskComments.tsx:39` | Confirmed |
+| [SR-004](#sr-004) | High | Unauthenticated User Profile Lookup via Privileged Service Role Key | `supabase/functions/get-profile/index.ts:23` | Confirmed |
+| [SR-005](#sr-005) | High | Privilege Escalation via Unrestricted Column Updates on Profiles RLS Policy | `supabase/migrations/002_access_policies.sql:15` | Confirmed |
+| [SR-006](#sr-006) | Medium | Overly Permissive Read Access Policy for Tasks | `supabase/migrations/002_access_policies.sql:34` | Confirmed |
+| [SR-007](#sr-007) | Low | Hardcoded Key Pattern Shipped in Client Application Configuration | `src/lib/demoConfig.ts:7` | Confirmed |
 
-**By category:** Broken Access Control (2), SQL Injection (1), Cross-Site Scripting (XSS) (1), Mass Assignment (1), Sensitive Data Exposure (1)
+**By category:** Broken Access Control (3), SQL Injection (1), Cross-Site Scripting (1), Privilege Escalation (1), Hardcoded Secrets (1)
 
 ## 4. Detailed Findings
 
@@ -53,16 +54,16 @@ An independent security review of the CDF TaskFlow codebase revealed multiple se
 | **CWE** | CWE-89 |
 | **OWASP** | A03:2021 Injection |
 | **Affected file** | `supabase/functions/search-tasks/index.ts` |
-| **Code location** | lines 20-26 |
+| **Code location** | lines 20-28 |
 | **Status** | Confirmed |
 | **Confidence** | High |
 | **Detected by** | AI analysis + static rule |
 
 #### Description
 
-The search-tasks Edge Function interpolates untrusted query parameters directly into a raw SQL query string without parameterization, executing it via the `sql.unsafe()` driver method.
+The search-tasks function constructs a SQL query using string interpolation with the untrusted query parameter 'q' and executes it via sql.unsafe().
 
-#### Vulnerable Code (`supabase/functions/search-tasks/index.ts`, lines 20-26)
+#### Vulnerable Code (`supabase/functions/search-tasks/index.ts`, lines 20-28)
 
 ```typescript
     const query = `
@@ -72,19 +73,21 @@ The search-tasks Edge Function interpolates untrusted query parameters directly 
       ORDER BY created_at DESC
       LIMIT 25
     `;
+
+    const tasks = await sql.unsafe(query);
 ```
 
 #### Potential Impact
 
-An attacker can execute arbitrary SQL queries against the database, leading to full database compromise, data exfiltration, or modification.
+An attacker can inject arbitrary SQL statements, allowing them to bypass access controls, extract sensitive data from all database tables, modify database contents, or execute administrative commands.
 
 #### Example Attack Scenario
 
-An attacker sends a request to `/functions/v1/search-tasks?q=%25' UNION SELECT id, title, description, status FROM public.profiles--` to extract sensitive profile records.
+An attacker submits a GET request to /search-tasks?q=test%27%20UNION%20SELECT%20id%2C%20full_name%2C%20role%2C%20bio%20FROM%20public.profiles%20-- to leak user profile details.
 
 #### Recommended Fix
 
-Use parameterized queries or the safe query builder provided by the database client rather than string interpolation and `sql.unsafe()`.
+Use tagged template literals provided by postgres.js to parameterize SQL queries safely instead of building SQL via string template interpolation and sql.unsafe().
 
 #### Secure Code Example
 
@@ -98,23 +101,104 @@ Use parameterized queries or the safe query builder provided by the database cli
     `;
 ```
 
-#### Other Affected Locations
-
-- `supabase/functions/search-tasks/index.ts:28` - Unsafe query execution using sql.unsafe()
-
 #### Validation Notes
 
-The code clearly concatenates user input directly into an SQL string and passes it to sql.unsafe(), enabling arbitrary SQL injection.
+Accurately identifies a critical SQL injection vulnerability in the search-tasks Edge Function where untrusted query parameters are interpolated directly into a SQL string executed via postgres.unsafe().
 
 ---
 
 <a id="sr-002"></a>
-### SR-002: Stored Cross-Site Scripting via dangerouslySetInnerHTML
+### SR-002: Unauthenticated Task Update with Mass Assignment and Privilege Bypass
+
+| | |
+|---|---|
+| **Severity** | Critical |
+| **Category** | Broken Access Control |
+| **CWE** | CWE-284 |
+| **OWASP** | A01:2021 Broken Access Control |
+| **Affected file** | `supabase/functions/update-task/index.ts` |
+| **Code location** | lines 26-41 |
+| **Status** | Confirmed |
+| **Confidence** | High |
+| **Detected by** | AI analysis + static rule |
+
+#### Description
+
+The update-task function accepts arbitrary JSON updates and applies them using the Supabase Service Role Key without authenticating the requester or verifying task ownership.
+
+#### Vulnerable Code (`supabase/functions/update-task/index.ts`, lines 26-41)
+
+```typescript
+    const body = await request.json();
+
+    const taskId = body.taskId;
+    const changes = body.changes;
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    const { data, error } = await supabase
+      .from("tasks")
+      .update(changes)
+      .eq("id", taskId)
+      .select()
+      .single();
+```
+
+#### Potential Impact
+
+Unauthenticated users can update any task in the system and modify privileged attributes such as task owner_id or project_id through mass assignment.
+
+#### Example Attack Scenario
+
+An unauthenticated attacker sends a POST request with body {"taskId": "<target-uuid>", "changes": {"owner_id": "<attacker-uuid>", "title": "Hacked"}} to reassign ownership of any task.
+
+#### Recommended Fix
+
+Pass the client's JWT Authorization header to createClient or create a Supabase client scoped to the user's token. Validate input fields against an allowlist before performing updates.
+
+#### Secure Code Example
+
+```typescript
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return Response.json({ error: "Missing authorization header" }, { status: 401 });
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const allowedChanges: Record<string, unknown> = {};
+    if (typeof changes.title === "string") allowedChanges.title = changes.title;
+    if (typeof changes.description === "string") allowedChanges.description = changes.description;
+    if (typeof changes.status === "string") allowedChanges.status = changes.status;
+
+    const { data, error } = await supabase
+      .from("tasks")
+      .update(allowedChanges)
+      .eq("id", taskId)
+      .select()
+      .single();
+```
+
+#### Validation Notes
+
+Accurately identifies an unauthenticated Edge Function endpoint using the privileged Supabase Service Role Key to apply un-sanitized mass assignment updates on any task record.
+
+---
+
+<a id="sr-003"></a>
+### SR-003: Cross-Site Scripting (XSS) via Unsanitized Comment Rendering
 
 | | |
 |---|---|
 | **Severity** | High |
-| **Category** | Cross-Site Scripting (XSS) |
+| **Category** | Cross-Site Scripting |
 | **CWE** | CWE-79 |
 | **OWASP** | A03:2021 Injection |
 | **Affected file** | `src/components/TaskComments.tsx` |
@@ -125,7 +209,7 @@ The code clearly concatenates user input directly into an SQL string and passes 
 
 #### Description
 
-Comment text is rendered directly as raw HTML using React's `dangerouslySetInnerHTML` sink without prior sanitization.
+Task comment text is rendered directly into the DOM using React's dangerouslySetInnerHTML attribute without HTML sanitization.
 
 #### Vulnerable Code (`src/components/TaskComments.tsx`, lines 39-43)
 
@@ -139,159 +223,165 @@ Comment text is rendered directly as raw HTML using React's `dangerouslySetInner
 
 #### Potential Impact
 
-An attacker can post malicious JavaScript payloads in comments, leading to stored cross-site scripting when other users view the task comments.
+If an attacker inserts HTML or JavaScript payload into a comment, it executes in the browsers of users viewing the task details, potentially stealing session details or performing unauthorized actions.
 
 #### Example Attack Scenario
 
-An attacker posts a comment containing `<img src=x onerror=alert(document.cookie)>`, which executes script code in the browser of any user opening the task details.
+An attacker submits a comment containing <img src=x onerror=alert(document.cookie)>. When another user views the task comments, the script executes.
 
 #### Recommended Fix
 
-Avoid rendering raw HTML unless necessary. If rich text is required, sanitize the content using a robust library such as DOMPurify before passing it to `dangerouslySetInnerHTML`, or render the text normally as a React node.
+Render user-supplied text directly inside React elements instead of dangerouslySetInnerHTML, or sanitize HTML with a library like DOMPurify.
 
 #### Secure Code Example
 
 ```tsx
-              <div>
-                {comment.text}
-              </div>
+              <div>{comment.text}</div>
 ```
 
 #### Validation Notes
 
-Rendering user comments via dangerouslySetInnerHTML without sanitization presents a direct Stored XSS vulnerability.
+Accurately identifies stored XSS in TaskComments.tsx caused by passing raw comment content to dangerouslySetInnerHTML.
 
 ---
 
-<a id="sr-003"></a>
-### SR-003: Unauthenticated Privileged API Endpoint for Profile Retrieval
+<a id="sr-004"></a>
+### SR-004: Unauthenticated User Profile Lookup via Privileged Service Role Key
 
 | | |
 |---|---|
 | **Severity** | High |
 | **Category** | Broken Access Control |
-| **CWE** | CWE-306 |
+| **CWE** | CWE-639 |
 | **OWASP** | A01:2021 Broken Access Control |
 | **Affected file** | `supabase/functions/get-profile/index.ts` |
-| **Code location** | lines 4-10 |
+| **Code location** | lines 23-32 |
 | **Status** | Confirmed |
 | **Confidence** | High |
 | **Detected by** | AI analysis + static rule |
 
 #### Description
 
-The `get-profile` server function does not perform any authentication checks, session validation, or authorization checks to verify whether the caller is permitted to view the requested profile.
+The get-profile Edge Function uses the service role key to query profiles based on a user-supplied 'userId' query parameter without verifying caller authentication.
 
-#### Vulnerable Code (`supabase/functions/get-profile/index.ts`, lines 4-10)
+#### Vulnerable Code (`supabase/functions/get-profile/index.ts`, lines 23-32)
 
 ```typescript
-Deno.serve(async (request: Request) => {
-  if (request.method !== "GET") {
-    return Response.json(
-      { error: "Method not allowed" },
-      { status: 405 }
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
-  }
-```
 
-#### Potential Impact
-
-Any anonymous user can supply arbitrary user IDs to retrieve profile information, resulting in Insecure Direct Object Reference (IDOR) and unauthorized data disclosure.
-
-#### Example Attack Scenario
-
-An attacker sends an unauthenticated GET request specifying another user's ID to fetch their private profile information.
-
-#### Recommended Fix
-
-Validate the caller's JWT/authorization header, verify that the authenticated user has permission to view the requested profile, and avoid using the service role key to bypass access controls.
-
-#### Secure Code Example
-
-```typescript
-    // Validate auth header and caller identity before querying
-```
-
-#### Other Affected Locations
-
-- `supabase/functions/get-profile/index.ts:23` - Supabase client initialized with service role key
-
-#### Validation Notes
-
-The Edge Function handles requests without checking any authentication or authorization token, while querying with the service role key.
-
----
-
-<a id="sr-004"></a>
-### SR-004: Mass Assignment Vulnerability in Update Task Edge Function
-
-| | |
-|---|---|
-| **Severity** | High |
-| **Category** | Mass Assignment |
-| **CWE** | CWE-915 |
-| **OWASP** | A04:2021 Insecure Design |
-| **Affected file** | `supabase/functions/update-task/index.ts` |
-| **Code location** | lines 36-41 |
-| **Status** | Confirmed |
-| **Confidence** | High |
-| **Detected by** | AI analysis + static rule |
-
-#### Description
-
-The `update-task` function takes the `changes` object directly from the request body and passes it to the Supabase update method without validation or an allowed field filter.
-
-#### Vulnerable Code (`supabase/functions/update-task/index.ts`, lines 36-41)
-
-```typescript
     const { data, error } = await supabase
-      .from("tasks")
-      .update(changes)
-      .eq("id", taskId)
-      .select()
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
       .single();
 ```
 
 #### Potential Impact
 
-An attacker can modify restricted attributes or sensitive columns on records if Row Level Security is bypassed via the service role key.
+Any remote caller can query arbitrary user profile details by manipulating the userId parameter.
 
 #### Example Attack Scenario
 
-An attacker sends a crafted JSON payload containing administrative or ownership fields inside the `changes` object to take over tasks.
+An attacker queries GET /get-profile?userId=<target-user-uuid> to fetch full profile details for any user.
 
 #### Recommended Fix
 
-Define an explicit allowlist of modifiable fields and reject unallowed properties before updating the database.
+Authenticate callers using their JWT token and enforce authorization checks or rely on user-scoped Supabase client calls.
 
 #### Secure Code Example
 
 ```typescript
-    const allowedChanges = {
-      title: changes.title,
-      description: changes.description,
-      status: changes.status,
-    };
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
     const { data, error } = await supabase
-      .from("tasks")
-      .update(allowedChanges)
-      .eq("id", taskId)
-      .select()
+      .from("profiles")
+      .select("id, full_name, bio, role")
+      .eq("id", userId)
       .single();
 ```
 
-#### Other Affected Locations
-
-- `supabase/functions/update-task/index.ts:28` - Unvalidated request body fields used in database update
-
 #### Validation Notes
 
-Unvalidated request body objects passed directly to update operations allow mass assignment vulnerabilities.
+Accurately identifies an unauthenticated user profile retrieval function using the service role key, bypassing RLS and allowing unrestricted IDOR access to profile data.
 
 ---
 
 <a id="sr-005"></a>
-### SR-005: Permissive Row-Level Security Policies on Tables
+### SR-005: Privilege Escalation via Unrestricted Column Updates on Profiles RLS Policy
+
+| | |
+|---|---|
+| **Severity** | High |
+| **Category** | Privilege Escalation |
+| **CWE** | CWE-269 |
+| **OWASP** | A01:2021 Broken Access Control |
+| **Affected file** | `supabase/migrations/002_access_policies.sql` |
+| **Code location** | lines 15-20 |
+| **Status** | Confirmed |
+| **Confidence** | High |
+| **Detected by** | AI analysis + static rule |
+
+#### Description
+
+The RLS UPDATE policy on public.profiles allows authenticated users to update their row but does not restrict which columns can be updated. PostgreSQL row-level security policies control row access, not column permissions.
+
+#### Vulnerable Code (`supabase/migrations/002_access_policies.sql`, lines 15-20)
+
+```sql
+CREATE POLICY "Users can update own profile"
+ON public.profiles
+FOR UPDATE
+TO authenticated
+USING (id = auth.uid())
+WITH CHECK (id = auth.uid());
+```
+
+#### Potential Impact
+
+A user with 'member' role can send an UPDATE query targeting their profile row setting role = 'admin' to escalate their privileges.
+
+#### Example Attack Scenario
+
+A member executes supabase.from('profiles').update({ role: 'admin' }).eq('id', myUserId) to self-promote to administrator.
+
+#### Recommended Fix
+
+Restrict update permissions on sensitive columns using column-level GRANT statements or trigger/CHECK logic in RLS policies.
+
+#### Secure Code Example
+
+```sql
+REVOKE UPDATE ON public.profiles FROM authenticated;
+GRANT UPDATE (full_name, bio) ON public.profiles TO authenticated;
+
+CREATE POLICY "Users can update own profile"
+ON public.profiles
+FOR UPDATE
+TO authenticated
+USING (id = auth.uid())
+WITH CHECK (id = auth.uid());
+```
+
+#### Validation Notes
+
+Accurately identifies privilege escalation vulnerability where an RLS UPDATE policy on public.profiles allows users to update any column in their row, including 'role'.
+
+---
+
+<a id="sr-006"></a>
+### SR-006: Overly Permissive Read Access Policy for Tasks
 
 | | |
 |---|---|
@@ -300,20 +390,20 @@ Unvalidated request body objects passed directly to update operations allow mass
 | **CWE** | CWE-284 |
 | **OWASP** | A01:2021 Broken Access Control |
 | **Affected file** | `supabase/migrations/002_access_policies.sql` |
-| **Code location** | lines 9-13 |
+| **Code location** | lines 34-38 |
 | **Status** | Confirmed |
 | **Confidence** | High |
 | **Detected by** | AI analysis + static rule |
 
 #### Description
 
-Row-level security policies such as "Users can view profiles" and "Users can view tasks" use `USING (true)`, granting any authenticated user read access to all rows without filtering by ownership or association.
+The RLS policy 'Users can view tasks' uses USING (true), allowing any authenticated user to select all tasks across all projects regardless of project membership.
 
-#### Vulnerable Code (`supabase/migrations/002_access_policies.sql`, lines 9-13)
+#### Vulnerable Code (`supabase/migrations/002_access_policies.sql`, lines 34-38)
 
 ```sql
-CREATE POLICY "Users can view profiles"
-ON public.profiles
+CREATE POLICY "Users can view tasks"
+ON public.tasks
 FOR SELECT
 TO authenticated
 USING (true);
@@ -321,43 +411,45 @@ USING (true);
 
 #### Potential Impact
 
-Authenticated users can read all records in the table, violating data isolation and privacy requirements.
+Users can view private tasks belonging to projects created by other users.
 
 #### Example Attack Scenario
 
-A standard user queries the `profiles` or `tasks` table and receives records belonging to all other users.
+An authenticated user queries the tasks table directly and views confidential tasks created by other users.
 
 #### Recommended Fix
 
-Restrict the `USING` clause to ensure users can only view records they own, are assigned to, or are authorized to access.
+Restrict task select access to project owners or project collaborators.
 
 #### Secure Code Example
 
 ```sql
-CREATE POLICY "Users can view own profile"
-ON public.profiles
+CREATE POLICY "Users can view tasks"
+ON public.tasks
 FOR SELECT
 TO authenticated
-USING (id = auth.uid());
+USING (
+  EXISTS (
+    SELECT 1 FROM public.projects
+    WHERE projects.id = tasks.project_id
+    AND projects.owner_id = auth.uid()
+  )
+);
 ```
-
-#### Other Affected Locations
-
-- `supabase/migrations/002_access_policies.sql:34` - Permissive USING (true) policy for tasks
 
 #### Validation Notes
 
-Using USING (true) on tables bypasses proper row-level access control, allowing any authenticated user to view all rows.
+Accurately identifies an overly broad RLS SELECT policy on public.tasks (USING (true)) that exposes tasks across all projects to any authenticated user.
 
 ---
 
-<a id="sr-006"></a>
-### SR-006: Hardcoded Placeholder Secret in Frontend Code
+<a id="sr-007"></a>
+### SR-007: Hardcoded Key Pattern Shipped in Client Application Configuration
 
 | | |
 |---|---|
 | **Severity** | Low |
-| **Category** | Sensitive Data Exposure |
+| **Category** | Hardcoded Secrets |
 | **CWE** | CWE-798 |
 | **OWASP** | A07:2021 Identification and Authentication Failures |
 | **Affected file** | `src/lib/demoConfig.ts` |
@@ -368,7 +460,7 @@ Using USING (true) on tables bypasses proper row-level access control, allowing 
 
 #### Description
 
-A credential-like key is hardcoded directly in client-side configuration source code. Although the value is explicitly marked as a placeholder, embedding secrets or keys in frontend bundles is an insecure pattern.
+An API key string literal is embedded in the frontend source configuration. Note that the value appears to be a placeholder/demo key, but storing static credentials in client code is an insecure design pattern.
 
 #### Vulnerable Code (`src/lib/demoConfig.ts`, lines 7-10)
 
@@ -381,28 +473,28 @@ A credential-like key is hardcoded directly in client-side configuration source 
 
 #### Potential Impact
 
-Hardcoded keys in frontend bundles are publicly readable by anyone inspecting the application code.
+Hardcoded credentials in frontend bundles are exposed to all site visitors and can be extracted easily.
 
 #### Example Attack Scenario
 
-An automated scanner or auditor flags the configuration file for embedded secret keys.
+An attacker inspects the bundled JavaScript file and extracts the hardcoded API key.
 
 #### Recommended Fix
 
-Remove hardcoded keys from source code and load configuration values exclusively from runtime environment variables.
+Inject client-side configuration parameters via environment variables (e.g., import.meta.env) at build time.
 
 #### Secure Code Example
 
 ```typescript
   analytics: {
     enabled: true,
-    apiKey: import.meta.env.VITE_ANALYTICS_KEY ?? "",
+    apiKey: import.meta.env.VITE_ANALYTICS_API_KEY ?? "",
   },
 ```
 
 #### Validation Notes
 
-The value is a placeholder as indicated by 'NOT_REAL', but the pattern of embedding API keys in frontend code remains risky. Embedding configuration secrets in frontend code is an insecure pattern, even if marked as a placeholder.
+Accurately identifies embedding client-side configuration secret key patterns into frontend source code.
 
 ---
 
@@ -410,32 +502,32 @@ The value is a placeholder as indicated by 'NOT_REAL', but the pattern of embedd
 
 | Finding | Severity | File | Recommended Action |
 |---|---|---|---|
-| SR-001 | Critical | `supabase/functions/search-tasks/index.ts` | Use parameterized queries or the safe query builder provided by the database client rather than string interpolation and `sql.unsafe()`. |
-| SR-002 | High | `src/components/TaskComments.tsx` | Avoid rendering raw HTML unless necessary. |
-| SR-003 | High | `supabase/functions/get-profile/index.ts` | Validate the caller's JWT/authorization header, verify that the authenticated user has permission to view the requested profile, and avoid using the service role key to bypass access controls. |
-| SR-004 | High | `supabase/functions/update-task/index.ts` | Define an explicit allowlist of modifiable fields and reject unallowed properties before updating the database. |
-| SR-005 | Medium | `supabase/migrations/002_access_policies.sql` | Restrict the `USING` clause to ensure users can only view records they own, are assigned to, or are authorized to access. |
-| SR-006 | Low | `src/lib/demoConfig.ts` | Remove hardcoded keys from source code and load configuration values exclusively from runtime environment variables. |
+| SR-001 | Critical | `supabase/functions/search-tasks/index.ts` | Use tagged template literals provided by postgres.js to parameterize SQL queries safely instead of building SQL via string template interpolation and sql.unsafe(). |
+| SR-002 | Critical | `supabase/functions/update-task/index.ts` | Pass the client's JWT Authorization header to createClient or create a Supabase client scoped to the user's token. |
+| SR-003 | High | `src/components/TaskComments.tsx` | Render user-supplied text directly inside React elements instead of dangerouslySetInnerHTML, or sanitize HTML with a library like DOMPurify. |
+| SR-004 | High | `supabase/functions/get-profile/index.ts` | Authenticate callers using their JWT token and enforce authorization checks or rely on user-scoped Supabase client calls. |
+| SR-005 | High | `supabase/migrations/002_access_policies.sql` | Restrict update permissions on sensitive columns using column-level GRANT statements or trigger/CHECK logic in RLS policies. |
+| SR-006 | Medium | `supabase/migrations/002_access_policies.sql` | Restrict task select access to project owners or project collaborators. |
+| SR-007 | Low | `src/lib/demoConfig.ts` | Inject client-side configuration parameters via environment variables (e.g., import.meta.env) at build time. |
 
 ## 6. Overall Assessment
 
 **Overall risk rating: CRITICAL**
 
-The application exhibits systemic security weaknesses typical of insecure prototype development. Edge functions rely heavily on privileged service-role keys without validating client session context or implementing authorization checks, effectively bypassing database row-level security. Furthermore, database queries utilize raw string interpolation instead of parameterized builders, and frontend components render unescaped user content. Addressing these issues requires refactoring serverless endpoints to verify user identity tokens, enforcing robust allowlists, sanitizing all rendered output, and correcting overly permissive database policies.
+The application suffers from critical architectural authorization bypasses between the backend Edge Functions and the database layer. Specifically, Edge Functions utilize the Supabase SUPABASE_SERVICE_ROLE_KEY to perform queries, completely bypassing PostgreSQL Row Level Security without implementing compensating authentication or access checks in application logic. This pattern allows unauthenticated clients to read profile data, execute raw SQL injections, and modify arbitrary tasks via mass assignment. Simultaneously, the database RLS policies defined in SQL migrations lack column-level restrictions on sensitive profile attributes like 'role', allowing any authenticated user to elevate their role from 'member' to 'admin'. In the client tier, rendering user-controlled comment text via React's dangerouslySetInnerHTML introduces Stored Cross-Site Scripting (XSS), completing an attack path where XSS can be leveraged alongside insecure API functions.
 
 ### Prioritized Remediation Plan
 
-1. Refactor supabase/functions/search-tasks/index.ts to use parameterized queries instead of sql.unsafe() string interpolation.
-2. Implement mandatory authentication token verification and authorization checks in supabase/functions/get-profile/index.ts and supabase/functions/update-task/index.ts.
-3. Sanitize comment text before rendering or remove dangerouslySetInnerHTML in src/components/TaskComments.tsx.
-4. Restrict overly permissive row-level security policies in supabase/migrations/002_access_policies.sql to enforce proper user data isolation.
-5. Define explicit field allowlists for task updates to prevent mass assignment risks.
+1. Remove direct usage of SUPABASE_SERVICE_ROLE_KEY in Edge Functions (update-task, get-profile) and replace with user-context Supabase clients that enforce JWT authentication.
+2. Fix SQL injection in search-tasks by replacing raw string template interpolation and sql.unsafe() with postgres.js parameterized query tagged templates.
+3. Implement column-level permissions (REVOKE/GRANT) on public.profiles to prevent standard users from updating their own 'role' column.
+4. Restrict task SELECT RLS policy to only return tasks belonging to projects owned or accessible by auth.uid().
+5. Replace dangerouslySetInnerHTML in TaskComments.tsx with standard React child element rendering to prevent Stored XSS.
 
 ### Positive Observations
 
-- The project includes database migration files enforcing basic table constraints and role checks.
-- Project structure and TypeScript type definitions are clearly laid out.
-- Demo configurations and placeholder keys acknowledge security separation guidelines.
+- Row Level Security (RLS) is enabled across all public database tables in the initial schema migration.
+- Project creation and comment insertion policies correctly verify that author_id and owner_id match the authenticated user's auth.uid().
 
 ## 7. Scope and Limitations
 
@@ -449,10 +541,10 @@ The application exhibits systemic security weaknesses typical of insecure protot
 
 1. **Ingestion**: supported source files were collected (dependencies, build output and lock files excluded) and treated strictly as untrusted data.
 2. **Static rule engine**: 22 heuristic leads were raised by language-aware rules (secrets, injection sinks, XSS sinks, auth checks, CORS, RLS policies, etc.).
-3. **AI detection pass**: the full codebase (with line numbers) and the leads were analyzed by gemini-3.5-flash-lite in 1 context batch(es), reasoning across files about data flow, authentication and database policies. The model confirmed or dismissed each lead and looked for issues the rules cannot express.
+3. **AI detection pass**: the full codebase (with line numbers) and the leads were analyzed by gemini-3.6-flash in 1 context batch(es), reasoning across files about data flow, authentication and database policies. The model confirmed or dismissed each lead and looked for issues the rules cannot express.
 4. **Evidence grounding**: every finding's quoted code was matched against the real source to correct line numbers; 0 unsupported finding(s) were discarded.
 5. **AI review pass**: an independent second pass re-checked each finding for false positives, duplicates, severity and fix correctness (0 dropped), and wrote the summary and overall assessment.
-6. **Result**: 12 of 22 leads were confirmed and 9 dismissed as false positives. API usage: 2 requests, 33,169 input tokens (0 from prompt cache), 4,175 output tokens.
+6. **Result**: 20 of 22 leads were confirmed and 2 dismissed as false positives. API usage: 2 requests, 34,092 input tokens (0 from prompt cache), 4,961 output tokens.
 
 ## Appendix A: Files Reviewed
 
@@ -479,15 +571,10 @@ The application exhibits systemic security weaknesses typical of insecure protot
 
 | Lead | Rule | Location | Reason dismissed |
 |---|---|---|---|
-| S003 | DEBUG-ENABLED | `src/lib/demoConfig.ts:12` | Debug flag is part of a local hackathon demo configuration file and is intended for development purposes. |
-| S004 | DEBUG-ENABLED | `src/lib/demoConfig.ts:14` | Verbose log level is part of a local development configuration object. |
-| S006 | SELECT-STAR-RESPONSE | `supabase/functions/get-profile/index.ts:30` | Selecting all columns on a public profile is intentional in the context of fetching user profile details. |
-| S008 | ERROR-LEAK | `supabase/functions/get-profile/index.ts:44` | Error details returned are standard for a backend utility function handling exceptions in Deno. |
-| S013 | CORS-WILDCARD | `supabase/functions/update-task/index.ts:5` | Wildcard CORS headers are configured for public utility endpoints in serverless edge functions where appropriate. |
-| S014 | PRIV-SERVICE-ROLE | `supabase/functions/update-task/index.ts:33` | Service role key usage is necessary for backend Edge Functions performing privileged operations. |
-| S017 | ERROR-LEAK | `supabase/functions/update-task/index.ts:58` | Error details returned in update-task are standard error-handling practices for edge functions. |
-| S021 | RLS-UPDATE-PRIV-COLUMN | `supabase/migrations/002_access_policies.sql:15` | Profile role updates are mitigated by column restrictions or separate admin procedures if applicable. |
-| S022 | RLS-UNSCOPED-POLICY | `supabase/migrations/002_access_policies.sql:53` | Task comments policy correctly checks existence on related tasks. |
+| S003 | DEBUG-ENABLED | `src/lib/demoConfig.ts:12` | Debug configuration flag in demoConfig.ts is non-sensitive metadata for demo mode. |
+| S004 | DEBUG-ENABLED | `src/lib/demoConfig.ts:14` | Verbose log level configuration in demoConfig.ts is non-sensitive client configuration. |
+| S003 | DEBUG-ENABLED | `src/lib/demoConfig.ts:12` | Debug mode configuration flag in demoConfig.ts is non-sensitive in frontend client context. |
+| S004 | DEBUG-ENABLED | `src/lib/demoConfig.ts:14` | Verbose logging level setting in demoConfig.ts does not leak sensitive server secrets or credentials. |
 
 
 ---
