@@ -1,0 +1,442 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Security Report: vulnerable-app (samartha-2601/CDF-CyberSec-Hackathon/vulnerable-app)</title><style>
+:root{--bg:#f7f8fa;--card:#fff;--fg:#1d2330;--muted:#5d6678;--line:#e2e5eb;--code:#f2f4f7;
+--critical:#8b1a1a;--high:#c2410c;--medium:#b45309;--low:#2563eb;--info:#64748b;--ok:#15803d}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0f1218;--card:#171b23;--fg:#e6e8ec;
+--muted:#9aa3b2;--line:#2a303c;--code:#11151c;--critical:#f87171;--high:#fb923c;--medium:#fbbf24;--low:#60a5fa;--info:#94a3b8}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:1060px;margin:0 auto;padding:24px 16px 64px}h1{font-size:26px;margin:0 0 4px}h2{font-size:20px;margin:36px 0 12px;
+padding-bottom:6px;border-bottom:1px solid var(--line)}h3{font-size:17px;margin:0}h4{font-size:14px;margin:18px 0 6px;text-transform:uppercase;
+letter-spacing:.04em;color:var(--muted)}.muted{color:var(--muted)}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:12px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.kpi{background:var(--card);border:1px solid var(--line);
+border-radius:10px;padding:12px 14px}.kpi b{display:block;font-size:26px}.kpi span{color:var(--muted);font-size:13px}
+.sev{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;color:#fff;text-transform:uppercase;letter-spacing:.03em}
+.sev.critical{background:var(--critical)}.sev.high{background:var(--high)}.sev.medium{background:var(--medium)}.sev.low{background:var(--low)}.sev.info{background:var(--info)}
+.tag{display:inline-block;padding:1px 8px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--muted);margin-right:4px}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}td:first-child a{white-space:nowrap}.tbl{overflow-x:auto}pre{background:var(--code);border:1px solid var(--line);border-radius:8px;padding:12px;overflow:auto;font-size:13px;line-height:1.45}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}.bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden;display:flex}
+.bar i{display:block;height:100%}details.finding{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--info);border-radius:10px;margin:12px 0;padding:0}
+details.finding[data-sev=critical]{border-left-color:var(--critical)}details.finding[data-sev=high]{border-left-color:var(--high)}
+details.finding[data-sev=medium]{border-left-color:var(--medium)}details.finding[data-sev=low]{border-left-color:var(--low)}
+details.finding>summary{cursor:pointer;padding:14px 16px;list-style:none;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+details.finding>summary::-webkit-details-marker{display:none}.fbody{padding:0 16px 16px}.meta td:first-child{width:160px;color:var(--muted)}
+.filters button{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:999px;padding:4px 12px;margin:0 6px 6px 0;cursor:pointer}
+.filters button.on{outline:2px solid var(--fg)}.risk{font-size:18px;font-weight:700;text-transform:uppercase}
+.secure pre{border-color:var(--ok)}@media print{details.finding{break-inside:avoid}.filters{display:none}details.finding:not([open]) .fbody{display:block}}
+</style></head><body><div class="wrap">
+<p class="muted">SecReview AI v1.0.0 &middot; 2026-11-04 23:37 UTC</p>
+<h1>Security Assessment Report: vulnerable-app (samartha-2601/CDF-CyberSec-Hackathon/vulnerable-app)</h1>
+<p class="muted">Source: <code>https://github.com/samartha-2601/CDF-CyberSec-Hackathon/tree/main/vulnerable-app</code> &middot; Rule-based static review (no AI)
+&middot; 18 files, 951 lines</p>
+<div class="card"><div class="muted">Overall risk rating</div><div class="risk" style="color:var(--high)">high</div></div>
+<h2>Executive summary</h2><div class="card"><p>18 source files of vulnerable-app (samartha-2601/CDF-CyberSec-Hackathon/vulnerable-app) were scanned with the rule engine, which flagged 19 potential issue(s) (6 high, 9 medium, 4 low). These are unverified leads.</p></div>
+<h2>Findings summary</h2><div class="grid"><div class="kpi"><b style="color:var(--critical)">0</b><span>Critical</span></div><div class="kpi"><b style="color:var(--high)">6</b><span>High</span></div><div class="kpi"><b style="color:var(--medium)">9</b><span>Medium</span></div><div class="kpi"><b style="color:var(--low)">4</b><span>Low</span></div><div class="kpi"><b style="color:var(--info)">0</b><span>Info</span></div><div class="kpi"><b>19</b><span>Total</span></div></div>
+<div class="card"><div class="bar"><i style="width:0.0%;background:var(--critical)" title="critical: 0"></i><i style="width:31.6%;background:var(--high)" title="high: 6"></i><i style="width:47.4%;background:var(--medium)" title="medium: 9"></i><i style="width:21.1%;background:var(--low)" title="low: 4"></i><i style="width:0.0%;background:var(--info)" title="info: 0"></i></div></div>
+<div class="tbl"><table><tr><th>ID</th><th>Severity</th><th>Title</th><th>Location</th><th>Status</th></tr><tr><td><a href="#sr-001">SR-001</a></td><td><span class="sev high">high</span></td><td>dangerouslySetInnerHTML renders raw HTML</td><td><code>src/components/TaskComments.tsx:40</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-002">SR-002</a></td><td><span class="sev high">high</span></td><td>SQL built with string interpolation</td><td><code>supabase/functions/search-tasks/index.ts:23</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-003">SR-003</a></td><td><span class="sev high">high</span></td><td>HTTP handler with no authentication check</td><td><code>supabase/functions/update-task/index.ts:11</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-004">SR-004</a></td><td><span class="sev high">high</span></td><td>Row-level security policy allows every row</td><td><code>supabase/migrations/002_access_policies.sql:13</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-005">SR-005</a></td><td><span class="sev high">high</span></td><td>UPDATE policy on profiles does not protect column(s): role</td><td><code>supabase/migrations/002_access_policies.sql:15</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-006">SR-006</a></td><td><span class="sev high">high</span></td><td>Policy &quot;Users can view task comments&quot; is not scoped to the current user</td><td><code>supabase/migrations/002_access_policies.sql:53</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-007">SR-007</a></td><td><span class="sev medium">medium</span></td><td>Hardcoded secret-like value</td><td><code>src/lib/demoConfig.ts:9</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-008">SR-008</a></td><td><span class="sev medium">medium</span></td><td>HTTP handler with no authentication check</td><td><code>supabase/functions/get-profile/index.ts:4</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-009">SR-009</a></td><td><span class="sev medium">medium</span></td><td>Privileged service-role / admin credential used in request handler</td><td><code>supabase/functions/get-profile/index.ts:25</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-010">SR-010</a></td><td><span class="sev medium">medium</span></td><td>Record looked up by client-supplied identifier</td><td><code>supabase/functions/get-profile/index.ts:31</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-011">SR-011</a></td><td><span class="sev medium">medium</span></td><td>HTTP handler with no authentication check</td><td><code>supabase/functions/search-tasks/index.ts:4</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-012">SR-012</a></td><td><span class="sev medium">medium</span></td><td>Permissive CORS policy</td><td><code>supabase/functions/update-task/index.ts:5</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-013">SR-013</a></td><td><span class="sev medium">medium</span></td><td>Privileged service-role / admin credential used in request handler</td><td><code>supabase/functions/update-task/index.ts:33</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-014">SR-014</a></td><td><span class="sev medium">medium</span></td><td>Request body passed directly to a database write</td><td><code>supabase/functions/update-task/index.ts:38</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-015">SR-015</a></td><td><span class="sev medium">medium</span></td><td>Record looked up by client-supplied identifier</td><td><code>supabase/functions/update-task/index.ts:39</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-016">SR-016</a></td><td><span class="sev low">low</span></td><td>All columns selected for an API response</td><td><code>supabase/functions/get-profile/index.ts:30</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-017">SR-017</a></td><td><span class="sev low">low</span></td><td>Internal error details returned to client</td><td><code>supabase/functions/get-profile/index.ts:44</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-018">SR-018</a></td><td><span class="sev low">low</span></td><td>Internal error details returned to client</td><td><code>supabase/functions/update-task/index.ts:58</code></td><td>Needs validation</td></tr><tr><td><a href="#sr-019">SR-019</a></td><td><span class="sev low">low</span></td><td>Debug / verbose mode enabled in configuration</td><td><code>src/lib/demoConfig.ts:12</code></td><td>Needs validation</td></tr></table></div>
+<h2>Detailed findings</h2><div class="filters"><button class="on" data-sev="all">All</button><button data-sev="high">High (6)</button><button data-sev="medium">Medium (9)</button><button data-sev="low">Low (4)</button><button id="expand">Expand all</button></div>
+
+<details class="finding" data-sev="high" id="sr-001" open>
+<summary><span class="sev high">high</span><h3>SR-001: dangerouslySetInnerHTML renders raw HTML</h3>
+<span class="tag">CWE-79</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Cross-Site Scripting (XSS)</td></tr>
+<tr><td>Location</td><td><code>src/components/TaskComments.tsx</code>, line 40</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>React&#x27;s escape hatch injects raw HTML. If the value can contain user-controlled content, this is stored/reflected XSS.</p>
+<h4>Vulnerable code</h4><pre><code>              &lt;div
+                dangerouslySetInnerHTML={{
+                  __html: comment.text,</code></pre>
+<h4>Why it matters</h4><p>React&#x27;s escape hatch injects raw HTML. If the value can contain user-controlled content, this is stored/reflected XSS.</p>
+
+<h4>How to fix</h4><p>Render user content as text (React escapes it automatically). If rich text is required, sanitize it with a vetted library such as DOMPurify using a strict allowlist.</p>
+<div class="secure"><h4>Secure code</h4><pre><code>// Safe default: render as text
+&lt;div className=&quot;comment-text&quot;&gt;{comment.text}&lt;/div&gt;
+
+// Only if HTML is required:
+import DOMPurify from &quot;dompurify&quot;;
+&lt;div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(comment.text, { USE_PROFILES: { html: true } }) }} /&gt;</code></pre></div>
+
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="high" id="sr-002" open>
+<summary><span class="sev high">high</span><h3>SR-002: SQL built with string interpolation</h3>
+<span class="tag">CWE-89</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>SQL Injection</td></tr>
+<tr><td>Location</td><td><code>supabase/functions/search-tasks/index.ts</code>, line 23</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>SQL text contains template interpolation; unless the value is a bound parameter, input is concatenated into the query.</p>
+<h4>Vulnerable code</h4><pre><code>      FROM public.tasks
+      WHERE title ILIKE &#x27;%${searchTerm}%&#x27;
+      ORDER BY created_at DESC</code></pre>
+<h4>Why it matters</h4><p>SQL text contains template interpolation; unless the value is a bound parameter, input is concatenated into the query.</p>
+
+<h4>How to fix</h4><p>Never build SQL by interpolating input. Use the driver&#x27;s parameterized/tagged query API so values are sent separately from the SQL text, and escape LIKE wildcards.</p>
+<div class="secure"><h4>Secure code</h4><pre><code>const pattern = `%${searchTerm.replace(/[\\%_]/g, &quot;\\$&amp;&quot;)}%`;
+const tasks = await sql`
+  SELECT id, title, description, status
+  FROM public.tasks
+  WHERE title ILIKE ${pattern}
+  ORDER BY created_at DESC
+  LIMIT 25
+`;</code></pre></div>
+<h4>Other affected locations</h4><ul><li><code>supabase/functions/search-tasks/index.ts:28</code> Raw/unsafe query API: const tasks = await sql.unsafe(query);</li></ul>
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="high" id="sr-003" open>
+<summary><span class="sev high">high</span><h3>SR-003: HTTP handler with no authentication check</h3>
+<span class="tag">CWE-306</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Missing Authentication</td></tr>
+<tr><td>Location</td><td><code>supabase/functions/update-task/index.ts</code>, line 11</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>This request handler never reads or verifies the caller&#x27;s identity (no Authorization header, session or token verification found in the file). It also performs data modification.</p>
+<h4>Vulnerable code</h4><pre><code>
+Deno.serve(async (request: Request) =&gt; {
+  if (request.method === &quot;OPTIONS&quot;) {</code></pre>
+<h4>Why it matters</h4><p>This request handler never reads or verifies the caller&#x27;s identity (no Authorization header, session or token verification found in the file). It also performs data modification.</p>
+
+<h4>How to fix</h4><p>Require and verify authentication at the start of the handler; reject unauthenticated requests with 401.</p>
+<div class="secure"><h4>Secure code</h4><pre><code>const authHeader = request.headers.get(&quot;Authorization&quot;);
+if (!authHeader) return Response.json({ error: &quot;Unauthorized&quot; }, { status: 401 });
+// verify the token with your auth provider and use the resulting user id</code></pre></div>
+
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="high" id="sr-004" open>
+<summary><span class="sev high">high</span><h3>SR-004: Row-level security policy allows every row</h3>
+<span class="tag">CWE-284</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Database Access Control</td></tr>
+<tr><td>Location</td><td><code>supabase/migrations/002_access_policies.sql</code>, line 13</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>A policy with USING (true)/WITH CHECK (true) grants the role access to every row, regardless of owner.</p>
+<h4>Vulnerable code</h4><pre><code>TO authenticated
+USING (true);
+</code></pre>
+<h4>Why it matters</h4><p>A policy with USING (true)/WITH CHECK (true) grants the role access to every row, regardless of owner.</p>
+
+<h4>How to fix</h4><p>Scope the policy to the rows the caller should see (owner, team or project membership).</p>
+<div class="secure"><h4>Secure code</h4><pre><code>CREATE POLICY &quot;Users can view own tasks&quot;
+ON public.tasks FOR SELECT TO authenticated
+USING (owner_id = auth.uid());</code></pre></div>
+<h4>Other affected locations</h4><ul><li><code>supabase/migrations/002_access_policies.sql:38</code> Row-level security policy allows every row: USING (true);</li></ul>
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="high" id="sr-005" open>
+<summary><span class="sev high">high</span><h3>SR-005: UPDATE policy on profiles does not protect column(s): role</h3>
+<span class="tag">CWE-269</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Privilege Escalation</td></tr>
+<tr><td>Location</td><td><code>supabase/migrations/002_access_policies.sql</code>, line 15</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>Row-level policies restrict *which rows* can be updated, not *which columns*. If the table has role/ownership columns and no column-level GRANT or trigger protects them, a user can update their own row to escalate privileges or reassign ownership.</p>
+<h4>Vulnerable code</h4><pre><code>
+CREATE POLICY &quot;Users can update own profile&quot;
+ON public.profiles</code></pre>
+<h4>Why it matters</h4><p>Row-level policies restrict *which rows* can be updated, not *which columns*. If the table has role/ownership columns and no column-level GRANT or trigger protects them, a user can update their own row to escalate privileges or reassign ownership.</p>
+
+<h4>How to fix</h4><p>Restrict which columns users may update (column-level GRANTs or a trigger that rejects changes to privileged columns).</p>
+<div class="secure"><h4>Secure code</h4><pre><code>REVOKE UPDATE ON public.profiles FROM authenticated;
+GRANT UPDATE (full_name, bio) ON public.profiles TO authenticated;</code></pre></div>
+
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="high" id="sr-006" open>
+<summary><span class="sev high">high</span><h3>SR-006: Policy &quot;Users can view task comments&quot; is not scoped to the current user</h3>
+<span class="tag">CWE-863</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Database Access Control</td></tr>
+<tr><td>Location</td><td><code>supabase/migrations/002_access_policies.sql</code>, line 53</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>The policy condition never references the requesting user (auth.uid()/JWT claims), so its result is the same for every user. Check whether it effectively grants all rows.</p>
+<h4>Vulnerable code</h4><pre><code>
+CREATE POLICY &quot;Users can view task comments&quot;
+ON public.task_comments</code></pre>
+<h4>Why it matters</h4><p>The policy condition never references the requesting user (auth.uid()/JWT claims), so its result is the same for every user. Check whether it effectively grants all rows.</p>
+
+<h4>How to fix</h4><p>Reference the requesting user in the policy condition, e.g. via ownership or membership of the parent row.</p>
+<div class="secure"><h4>Secure code</h4><pre><code>USING (EXISTS (SELECT 1 FROM public.tasks t WHERE t.id = task_comments.task_id AND t.owner_id = auth.uid()))</code></pre></div>
+
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="medium" id="sr-007" open>
+<summary><span class="sev medium">medium</span><h3>SR-007: Hardcoded secret-like value</h3>
+<span class="tag">CWE-798</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Hardcoded Secrets</td></tr>
+<tr><td>Location</td><td><code>src/lib/demoConfig.ts</code>, line 9</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>A credential-like key is assigned a string literal in source code. Secrets in source end up in version control and, for frontend code, in the shipped JS bundle. The value looks like a placeholder/demo value; report the insecure *pattern* (secret embedded in source/client bundle) without claiming a leaked live credential.</p>
+<h4>Vulnerable code</h4><pre><code>    enabled: true,
+    apiKey: &quot;cdf_demo_private_key_NOT_REAL_12345&quot;,
+  },</code></pre>
+<h4>Why it matters</h4><p>A credential-like key is assigned a string literal in source code. Secrets in source end up in version control and, for frontend code, in the shipped JS bundle. The value looks like a placeholder/demo value; report the insecure *pattern* (secret embedded in source/client bundle) without claiming a leaked live credential.</p>
+
+<h4>How to fix</h4><p>Move the value out of source code. Load it from server-side configuration (environment variables or a secrets manager) and rotate it if it was ever real. Never ship private keys in frontend bundles; proxy calls that need them through a backend.</p>
+<div class="secure"><h4>Secure code</h4><pre><code>// Server-side only: read from the environment, fail closed if missing
+const apiKey = process.env.ANALYTICS_API_KEY;
+if (!apiKey) throw new Error(&quot;ANALYTICS_API_KEY is not configured&quot;);</code></pre></div>
+
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="medium" id="sr-008" open>
+<summary><span class="sev medium">medium</span><h3>SR-008: HTTP handler with no authentication check</h3>
+<span class="tag">CWE-306</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Missing Authentication</td></tr>
+<tr><td>Location</td><td><code>supabase/functions/get-profile/index.ts</code>, line 4</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>This request handler never reads or verifies the caller&#x27;s identity (no Authorization header, session or token verification found in the file).</p>
+<h4>Vulnerable code</h4><pre><code>
+Deno.serve(async (request: Request) =&gt; {
+  if (request.method !== &quot;GET&quot;) {</code></pre>
+<h4>Why it matters</h4><p>This request handler never reads or verifies the caller&#x27;s identity (no Authorization header, session or token verification found in the file).</p>
+
+<h4>How to fix</h4><p>Require and verify authentication at the start of the handler; reject unauthenticated requests with 401.</p>
+<div class="secure"><h4>Secure code</h4><pre><code>const authHeader = request.headers.get(&quot;Authorization&quot;);
+if (!authHeader) return Response.json({ error: &quot;Unauthorized&quot; }, { status: 401 });
+// verify the token with your auth provider and use the resulting user id</code></pre></div>
+
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="medium" id="sr-009" open>
+<summary><span class="sev medium">medium</span><h3>SR-009: Privileged service-role / admin credential used in request handler</h3>
+<span class="tag">CWE-250</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Broken Access Control</td></tr>
+<tr><td>Location</td><td><code>supabase/functions/get-profile/index.ts</code>, line 25</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>A privileged key bypasses database row-level security. Every query made with it must enforce authorization in code (verify caller identity and ownership) or it exposes all rows.</p>
+<h4>Vulnerable code</h4><pre><code>      Deno.env.get(&quot;SUPABASE_URL&quot;) ?? &quot;&quot;,
+      Deno.env.get(&quot;SUPABASE_SERVICE_ROLE_KEY&quot;) ?? &quot;&quot;
+    );</code></pre>
+<h4>Why it matters</h4><p>A privileged key bypasses database row-level security. Every query made with it must enforce authorization in code (verify caller identity and ownership) or it exposes all rows.</p>
+
+<h4>How to fix</h4><p>Do not use the privileged key for user requests. Create the client with the caller&#x27;s JWT so row-level security applies, verify the user, and enforce ownership in the query.</p>
+<div class="secure"><h4>Secure code</h4><pre><code>const authHeader = request.headers.get(&quot;Authorization&quot;);
+if (!authHeader) return Response.json({ error: &quot;Unauthorized&quot; }, { status: 401 });
+const supabase = createClient(Deno.env.get(&quot;SUPABASE_URL&quot;)!, Deno.env.get(&quot;SUPABASE_ANON_KEY&quot;)!, {
+  global: { headers: { Authorization: authHeader } },
+});
+const { data: { user }, error } = await supabase.auth.getUser();
+if (error || !user) return Response.json({ error: &quot;Unauthorized&quot; }, { status: 401 });</code></pre></div>
+
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="medium" id="sr-010" open>
+<summary><span class="sev medium">medium</span><h3>SR-010: Record looked up by client-supplied identifier</h3>
+<span class="tag">CWE-639</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Insecure Direct Object Reference</td></tr>
+<tr><td>Location</td><td><code>supabase/functions/get-profile/index.ts</code>, line 31</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>A record is fetched/modified by an ID from the request. Confirm the handler checks that the caller is allowed to access that specific record.</p>
+<h4>Vulnerable code</h4><pre><code>      .select(&quot;*&quot;)
+      .eq(&quot;id&quot;, userId)
+      .single();</code></pre>
+<h4>Why it matters</h4><p>A record is fetched/modified by an ID from the request. Confirm the handler checks that the caller is allowed to access that specific record.</p>
+
+<h4>How to fix</h4><p>Derive the user from the verified session, and scope queries by owner (e.g. .eq(&quot;owner_id&quot;, user.id)) instead of trusting a client-supplied ID.</p>
+<div class="secure"><h4>Secure code</h4><pre><code>.eq(&quot;id&quot;, taskId)
+.eq(&quot;owner_id&quot;, user.id)</code></pre></div>
+
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="medium" id="sr-011" open>
+<summary><span class="sev medium">medium</span><h3>SR-011: HTTP handler with no authentication check</h3>
+<span class="tag">CWE-306</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Missing Authentication</td></tr>
+<tr><td>Location</td><td><code>supabase/functions/search-tasks/index.ts</code>, line 4</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>This request handler never reads or verifies the caller&#x27;s identity (no Authorization header, session or token verification found in the file).</p>
+<h4>Vulnerable code</h4><pre><code>
+Deno.serve(async (request: Request) =&gt; {
+  if (request.method !== &quot;GET&quot;) {</code></pre>
+<h4>Why it matters</h4><p>This request handler never reads or verifies the caller&#x27;s identity (no Authorization header, session or token verification found in the file).</p>
+
+<h4>How to fix</h4><p>Require and verify authentication at the start of the handler; reject unauthenticated requests with 401.</p>
+<div class="secure"><h4>Secure code</h4><pre><code>const authHeader = request.headers.get(&quot;Authorization&quot;);
+if (!authHeader) return Response.json({ error: &quot;Unauthorized&quot; }, { status: 401 });
+// verify the token with your auth provider and use the resulting user id</code></pre></div>
+
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="medium" id="sr-012" open>
+<summary><span class="sev medium">medium</span><h3>SR-012: Permissive CORS policy</h3>
+<span class="tag">CWE-942</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Security Misconfiguration</td></tr>
+<tr><td>Location</td><td><code>supabase/functions/update-task/index.ts</code>, line 5</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>Any website can call this endpoint from a victim&#x27;s browser. Endpoint accepts Authorization headers from any origin; risk depends on how auth is carried (bearer tokens vs cookies) and whether the endpoint is state-changing.</p>
+<h4>Vulnerable code</h4><pre><code>const corsHeaders = {
+  &quot;Access-Control-Allow-Origin&quot;: &quot;*&quot;,
+  &quot;Access-Control-Allow-Headers&quot;:</code></pre>
+<h4>Why it matters</h4><p>Any website can call this endpoint from a victim&#x27;s browser. Endpoint accepts Authorization headers from any origin; risk depends on how auth is carried (bearer tokens vs cookies) and whether the endpoint is state-changing.</p>
+
+<h4>How to fix</h4><p>Allow only the application&#x27;s own origins.</p>
+<div class="secure"><h4>Secure code</h4><pre><code>const ALLOWED_ORIGINS = new Set([&quot;https://app.example.com&quot;]);
+const origin = request.headers.get(&quot;Origin&quot;) ?? &quot;&quot;;
+const corsHeaders = ALLOWED_ORIGINS.has(origin) ? { &quot;Access-Control-Allow-Origin&quot;: origin, Vary: &quot;Origin&quot; } : {};</code></pre></div>
+
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="medium" id="sr-013" open>
+<summary><span class="sev medium">medium</span><h3>SR-013: Privileged service-role / admin credential used in request handler</h3>
+<span class="tag">CWE-250</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Broken Access Control</td></tr>
+<tr><td>Location</td><td><code>supabase/functions/update-task/index.ts</code>, line 33</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>A privileged key bypasses database row-level security. Every query made with it must enforce authorization in code (verify caller identity and ownership) or it exposes all rows.</p>
+<h4>Vulnerable code</h4><pre><code>      Deno.env.get(&quot;SUPABASE_URL&quot;) ?? &quot;&quot;,
+      Deno.env.get(&quot;SUPABASE_SERVICE_ROLE_KEY&quot;) ?? &quot;&quot;
+    );</code></pre>
+<h4>Why it matters</h4><p>A privileged key bypasses database row-level security. Every query made with it must enforce authorization in code (verify caller identity and ownership) or it exposes all rows.</p>
+
+<h4>How to fix</h4><p>Do not use the privileged key for user requests. Create the client with the caller&#x27;s JWT so row-level security applies, verify the user, and enforce ownership in the query.</p>
+<div class="secure"><h4>Secure code</h4><pre><code>const authHeader = request.headers.get(&quot;Authorization&quot;);
+if (!authHeader) return Response.json({ error: &quot;Unauthorized&quot; }, { status: 401 });
+const supabase = createClient(Deno.env.get(&quot;SUPABASE_URL&quot;)!, Deno.env.get(&quot;SUPABASE_ANON_KEY&quot;)!, {
+  global: { headers: { Authorization: authHeader } },
+});
+const { data: { user }, error } = await supabase.auth.getUser();
+if (error || !user) return Response.json({ error: &quot;Unauthorized&quot; }, { status: 401 });</code></pre></div>
+
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="medium" id="sr-014" open>
+<summary><span class="sev medium">medium</span><h3>SR-014: Request body passed directly to a database write</h3>
+<span class="tag">CWE-915</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Mass Assignment</td></tr>
+<tr><td>Location</td><td><code>supabase/functions/update-task/index.ts</code>, line 38</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>Writing a client-supplied object directly lets callers set any column (owner, role, status...).</p>
+<h4>Vulnerable code</h4><pre><code>      .from(&quot;tasks&quot;)
+      .update(changes)
+      .eq(&quot;id&quot;, taskId)</code></pre>
+<h4>Why it matters</h4><p>Writing a client-supplied object directly lets callers set any column (owner, role, status...).</p>
+
+<h4>How to fix</h4><p>Validate the request body and copy only an explicit allowlist of editable fields; never let clients set ownership, role or identifier columns.</p>
+<div class="secure"><h4>Secure code</h4><pre><code>const ALLOWED = [&quot;title&quot;, &quot;description&quot;, &quot;status&quot;] as const;
+const updates = Object.fromEntries(
+  Object.entries(body.changes ?? {}).filter(([k]) =&gt; (ALLOWED as readonly string[]).includes(k)),
+);</code></pre></div>
+
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="medium" id="sr-015" open>
+<summary><span class="sev medium">medium</span><h3>SR-015: Record looked up by client-supplied identifier</h3>
+<span class="tag">CWE-639</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Insecure Direct Object Reference</td></tr>
+<tr><td>Location</td><td><code>supabase/functions/update-task/index.ts</code>, line 39</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>A record is fetched/modified by an ID from the request. Confirm the handler checks that the caller is allowed to access that specific record.</p>
+<h4>Vulnerable code</h4><pre><code>      .update(changes)
+      .eq(&quot;id&quot;, taskId)
+      .select()</code></pre>
+<h4>Why it matters</h4><p>A record is fetched/modified by an ID from the request. Confirm the handler checks that the caller is allowed to access that specific record.</p>
+
+<h4>How to fix</h4><p>Derive the user from the verified session, and scope queries by owner (e.g. .eq(&quot;owner_id&quot;, user.id)) instead of trusting a client-supplied ID.</p>
+<div class="secure"><h4>Secure code</h4><pre><code>.eq(&quot;id&quot;, taskId)
+.eq(&quot;owner_id&quot;, user.id)</code></pre></div>
+
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="low" id="sr-016" open>
+<summary><span class="sev low">low</span><h3>SR-016: All columns selected for an API response</h3>
+<span class="tag">CWE-213</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Sensitive Data Exposure</td></tr>
+<tr><td>Location</td><td><code>supabase/functions/get-profile/index.ts</code>, line 30</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>Selecting every column may return sensitive fields to the caller; prefer an explicit allowlist.</p>
+<h4>Vulnerable code</h4><pre><code>      .from(&quot;profiles&quot;)
+      .select(&quot;*&quot;)
+      .eq(&quot;id&quot;, userId)</code></pre>
+<h4>Why it matters</h4><p>Selecting every column may return sensitive fields to the caller; prefer an explicit allowlist.</p>
+
+<h4>How to fix</h4><p>Select only the columns the caller needs.</p>
+<div class="secure"><h4>Secure code</h4><pre><code>.select(&quot;id, full_name, bio&quot;)</code></pre></div>
+
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="low" id="sr-017" open>
+<summary><span class="sev low">low</span><h3>SR-017: Internal error details returned to client</h3>
+<span class="tag">CWE-209</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Information Disclosure</td></tr>
+<tr><td>Location</td><td><code>supabase/functions/get-profile/index.ts</code>, line 44</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>Raw exception text can reveal schema names, SQL, stack traces or infrastructure details.</p>
+<h4>Vulnerable code</h4><pre><code>    return Response.json(
+      { error: String(error) },
+      { status: 500 }</code></pre>
+<h4>Why it matters</h4><p>Raw exception text can reveal schema names, SQL, stack traces or infrastructure details.</p>
+
+<h4>How to fix</h4><p>Log the detailed error server-side and return a generic message with a correlation id.</p>
+<div class="secure"><h4>Secure code</h4><pre><code>const errorId = crypto.randomUUID();
+console.error(errorId, error);
+return Response.json({ error: &quot;Internal error&quot;, errorId }, { status: 500 });</code></pre></div>
+
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="low" id="sr-018" open>
+<summary><span class="sev low">low</span><h3>SR-018: Internal error details returned to client</h3>
+<span class="tag">CWE-209</span><span class="tag">Needs validation</span><span class="tag">confidence: medium</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Information Disclosure</td></tr>
+<tr><td>Location</td><td><code>supabase/functions/update-task/index.ts</code>, line 58</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>Raw exception text can reveal schema names, SQL, stack traces or infrastructure details.</p>
+<h4>Vulnerable code</h4><pre><code>        error: &quot;Unable to update task&quot;,
+        details: String(error),
+      },</code></pre>
+<h4>Why it matters</h4><p>Raw exception text can reveal schema names, SQL, stack traces or infrastructure details.</p>
+
+<h4>How to fix</h4><p>Log the detailed error server-side and return a generic message with a correlation id.</p>
+<div class="secure"><h4>Secure code</h4><pre><code>const errorId = crypto.randomUUID();
+console.error(errorId, error);
+return Response.json({ error: &quot;Internal error&quot;, errorId }, { status: 500 });</code></pre></div>
+
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<details class="finding" data-sev="low" id="sr-019" open>
+<summary><span class="sev low">low</span><h3>SR-019: Debug / verbose mode enabled in configuration</h3>
+<span class="tag">CWE-489</span><span class="tag">Needs validation</span><span class="tag">confidence: low</span></summary>
+<div class="fbody">
+<table class="meta"><tr><td>Category</td><td>Security Misconfiguration</td></tr>
+<tr><td>Location</td><td><code>src/lib/demoConfig.ts</code>, line 12</td></tr>
+<tr><td>Detected by</td><td>Static rule (unverified)</td></tr></table>
+<h4>What is wrong</h4><p>Debug settings shipped to production can leak internals; ensure they are environment-driven.</p>
+<h4>Vulnerable code</h4><pre><code>
+  debug: {
+    enabled: true,</code></pre>
+<h4>Why it matters</h4><p>Debug settings shipped to production can leak internals; ensure they are environment-driven.</p>
+
+<h4>How to fix</h4><p>Drive debug/logging settings from the environment and default them off in production builds.</p>
+<div class="secure"><h4>Secure code</h4><pre><code>debug: { enabled: import.meta.env.DEV, logLevel: import.meta.env.DEV ? &quot;verbose&quot; : &quot;warn&quot; }</code></pre></div>
+<h4>Other affected locations</h4><ul><li><code>src/lib/demoConfig.ts:14</code> Debug / verbose mode enabled in configuration: logLevel: &quot;verbose&quot;,</li></ul>
+<h4>Validation notes</h4><p>Heuristic match (rules-only mode). Not verified by AI; confirm exploitability manually.</p>
+</div></details>
+<h2>Overall assessment</h2><div class="card"><p>This report was produced by the deterministic rule engine only. Each item is a pattern that commonly indicates a vulnerability and must be reviewed by a developer to confirm exploitability.</p></div>
+
+
+<h2>Scope and limitations</h2><ul><li>Rules-only mode: findings are unverified heuristic matches. Run with AI enabled for verified findings and code-specific fixes.</li><li>Static source-code review only: no code was executed, and no runtime or penetration testing was performed.</li><li>Deployment configuration, infrastructure, and third-party services outside the scanned files were not assessed.</li><li>Dependency versions were not checked against vulnerability databases (use npm audit / pip-audit alongside this tool).</li><li>Findings marked &#x27;needs validation&#x27; depend on runtime context and should be confirmed by a developer.</li><li>No automated tool finds every vulnerability; absence of a finding is not proof of security.</li></ul>
+<h2>Methodology</h2><div class="card"><p>The deterministic rule engine ran 22 pattern matches over 18 files. No AI verification was performed.</p></div>
+<h2>Appendix A: files reviewed</h2><ul><li><code>.oxlintrc.json</code> <span class='muted'>(json, 8 lines)</span></li><li><code>index.html</code> <span class='muted'>(html, 13 lines)</span></li><li><code>package.json</code> <span class='muted'>(json, 25 lines)</span></li><li><code>tsconfig.app.json</code> <span class='muted'>(json, 26 lines)</span></li><li><code>tsconfig.json</code> <span class='muted'>(json, 7 lines)</span></li><li><code>tsconfig.node.json</code> <span class='muted'>(json, 23 lines)</span></li><li><code>vite.config.ts</code> <span class='muted'>(typescript, 7 lines)</span></li><li><code>scripts/validate_project.py</code> <span class='muted'>(python, 118 lines)</span></li><li><code>src/App.tsx</code> <span class='muted'>(tsx, 321 lines)</span></li><li><code>src/main.tsx</code> <span class='muted'>(tsx, 10 lines)</span></li><li><code>src/types.ts</code> <span class='muted'>(typescript, 26 lines)</span></li><li><code>src/components/TaskComments.tsx</code> <span class='muted'>(tsx, 63 lines)</span></li><li><code>src/lib/demoConfig.ts</code> <span class='muted'>(typescript, 20 lines)</span></li><li><code>supabase/functions/get-profile/index.ts</code> <span class='muted'>(typescript, 48 lines)</span></li><li><code>supabase/functions/search-tasks/index.ts</code> <span class='muted'>(typescript, 44 lines)</span></li><li><code>supabase/functions/update-task/index.ts</code> <span class='muted'>(typescript, 66 lines)</span></li><li><code>supabase/migrations/001_initial_schema.sql</code> <span class='muted'>(sql, 57 lines)</span></li><li><code>supabase/migrations/002_access_policies.sql</code> <span class='muted'>(sql, 69 lines)</span></li></ul>
+
+
+<p class="muted" style="margin-top:40px">Automated AI-assisted source-code assessment; not a complete penetration test. Validate findings and re-test after remediation.</p>
+</div><script>
+document.querySelectorAll('.filters button').forEach(b=>b.addEventListener('click',()=>{
+document.querySelectorAll('.filters button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+const s=b.dataset.sev;document.querySelectorAll('details.finding').forEach(d=>{d.style.display=(s==='all'||d.dataset.sev===s)?'':'none'})}));
+document.getElementById('expand').addEventListener('click',()=>document.querySelectorAll('details.finding').forEach(d=>d.open=true));
+window.addEventListener('beforeprint',()=>document.querySelectorAll('details.finding').forEach(d=>d.open=true));
+</script></body></html>
