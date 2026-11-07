@@ -305,6 +305,20 @@ PROVIDERS = {
 }
 
 
+
+def _parse_json(text: str) -> Any:
+    """Parse a model's JSON reply, tolerating code fences and surrounding prose."""
+    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip())
+    for candidate in (text, text[text.find("{"):text.rfind("}") + 1] if "{" in text else ""):
+        if not candidate:
+            continue
+        try:
+            return json.loads(candidate, strict=False)
+        except json.JSONDecodeError:
+            continue
+    return None
+
+
 class OpenAICompatAnalyzer(ClaudeAnalyzer):
     """Same two-pass pipeline and prompts as the Claude analyzer, different transport."""
 
@@ -392,6 +406,7 @@ class OpenAICompatAnalyzer(ClaudeAnalyzer):
         user_text = "\n\n".join(c["text"] for c in content)
         schema_hint = ("\n\nRespond with ONLY a JSON object (no prose, no code fences) matching this JSON schema:\n"
                        + json.dumps(schema))
+        bad_json = 0
         while True:
             body: dict[str, Any] = {
                 "model": self.model,
@@ -405,9 +420,11 @@ class OpenAICompatAnalyzer(ClaudeAnalyzer):
                 body["response_format"] = {"type": "json_object"}
             try:
                 resp = self._post(f"{self.base_url}/chat/completions", body)
-                break
             except AIError as exc:
                 code = getattr(exc, "status_code", None)
+                if code in (400, 401, 403) and re.search(r"auth|api[ _-]?key|permission|credential", str(exc), re.I):
+                    raise AIError(f"{self.provider} rejected the API key. Copy the key again (no spaces) "
+                                  f"and set it once more. Details: {exc}") from exc
                 if code in (404, 429, 500, 503) and self.provider == "gemini" and not self._discovered:
                     self._discovered = True
                     self._fallback_models = self._discover_models() + self._fallback_models
@@ -423,26 +440,29 @@ class OpenAICompatAnalyzer(ClaudeAnalyzer):
                     log.warning("Provider rejected response_format; retrying with %s", self._format_mode)
                     continue
                 raise
-        u = resp.get("usage") or {}
-        self.usage.requests += 1
-        self.usage.input_tokens += u.get("prompt_tokens", 0) or 0
-        self.usage.output_tokens += u.get("completion_tokens", 0) or 0
-        self.usage.models.add(resp.get("model") or self.model)
-        choice = (resp.get("choices") or [{}])[0]
-        text = ((choice.get("message") or {}).get("content") or "").strip()
-        if choice.get("finish_reason") == "length":
-            raise AIError("Model output was truncated; try a smaller --batch-chars value.")
-        text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text)
-        try:
-            data = json.loads(text)
-        except json.JSONDecodeError:
-            start, end = text.find("{"), text.rfind("}")
-            try:
-                data = json.loads(text[start:end + 1]) if start != -1 else None
-            except json.JSONDecodeError:
-                data = None
-            if data is None:
-                raise AIError("Model returned invalid JSON")
+            u = resp.get("usage") or {}
+            self.usage.requests += 1
+            self.usage.input_tokens += u.get("prompt_tokens", 0) or 0
+            self.usage.output_tokens += u.get("completion_tokens", 0) or 0
+            self.usage.models.add(resp.get("model") or self.model)
+            choice = (resp.get("choices") or [{}])[0]
+            text = ((choice.get("message") or {}).get("content") or "").strip()
+            data = None if choice.get("finish_reason") == "length" else _parse_json(text)
+            if isinstance(data, dict):
+                break
+            # Free-tier models occasionally return truncated or malformed JSON: retry, then switch model.
+            bad_json += 1
+            why = "truncated" if choice.get("finish_reason") == "length" else "invalid JSON"
+            if bad_json < 3:
+                self.progress(f"  {self.model} returned {why}; retrying ({bad_json}/2)")
+                continue
+            if self._fallback_models:
+                nxt = self._fallback_models.pop(0)
+                self.progress(f"  {self.model} kept returning {why}; switching to {nxt}")
+                self.model, bad_json = nxt, 0
+                continue
+            raise AIError(f"Model returned {why} after several attempts; try again in a few minutes"
+                          + (" or use a smaller --batch-chars value." if why == "truncated" else "."))
         # Smaller models sometimes omit keys; fill defaults so the pipeline keeps going.
         for key, spec in schema.get("properties", {}).items():
             if key not in data:

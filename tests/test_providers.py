@@ -94,3 +94,37 @@ def test_gemini_switches_model_when_overloaded(monkeypatch):
 
     result = scan(str(FIX), analyzer=OpenAICompatAnalyzer("gemini", http_post=post))
     assert models[:2] == ["gemini-3.8-flash", "gemini-flash-latest"] and result.findings
+
+
+def test_invalid_json_is_retried_then_succeeds():
+    from secreview.ai import OpenAICompatAnalyzer
+
+    replies = iter(["{not json", '```json\n{"findings": [], "dismissed_signals": []}\n```'])
+    calls = []
+
+    def fake_post(url, body):
+        calls.append(body["model"])
+        return {"choices": [{"message": {"content": next(replies)}, "finish_reason": "stop"}]}
+
+    a = OpenAICompatAnalyzer("openai-compatible", model="m", base_url="http://x", http_post=fake_post)
+    out = a._call([{"type": "text", "text": "hi"}], {"type": "object", "properties": {}})
+    assert out == {"findings": [], "dismissed_signals": []}
+    assert len(calls) == 2
+
+
+def test_bad_api_key_is_not_retried_as_format_error():
+    import pytest
+    from secreview.ai import AIError, OpenAICompatAnalyzer
+
+    calls = []
+
+    def fake_post(url, body):
+        calls.append(body)
+        err = AIError('gemini API error 400: {"message": "Invalid Auth key."}')
+        err.status_code = 400
+        raise err
+
+    a = OpenAICompatAnalyzer("openai-compatible", model="m", base_url="http://x", http_post=fake_post)
+    with pytest.raises(AIError, match="rejected the API key"):
+        a._call([{"type": "text", "text": "hi"}], {"type": "object", "properties": {}})
+    assert len(calls) == 1
